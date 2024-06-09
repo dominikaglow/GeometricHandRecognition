@@ -38,7 +38,7 @@ def check_classification(features_dict):
         scores.sort(key=lambda x: x[1])  # Sort scores in ascending order
         closest_match = scores[0][0]
         person_id2 = features_dict[closest_match]['person_id']
-        
+        print(f"Closest match for {person_id1}: {person_id2}")
         if person_id1 == person_id2:
             correct_count += 1
         

@@ -3,6 +3,7 @@ import sys
 import json
 import cv2
 import numpy as np
+import re
 
 def capture_image(image_path):
     image = cv2.imread(image_path)
@@ -29,6 +30,7 @@ def simplify_contour(contour):
     return approx
 
 def extract_convexity_defects(contour, hull):
+    hull[::-1].sort(axis=0)
     if len(hull) > 3:  # Ensure there are enough points to form defects
         defects = cv2.convexityDefects(contour, hull)
         return defects
@@ -75,7 +77,13 @@ def extract_features(image_path):
         return None
 
 def get_person_id(image_path):
-    return os.path.basename(os.path.dirname(os.path.dirname(os.path.dirname(image_path))))
+    # Regex pattern to match 'p{number}'
+    pattern = r'p\d+'
+
+    # Find all occurrences of the pattern in the string
+    match = re.search(pattern, image_path)
+
+    return match.group() if match else None
 
 def get_all_image_paths(directory):
     image_paths = []
@@ -91,10 +99,11 @@ def save_features_to_json(image_paths, output_file):
         features = extract_features(image_path)
         if features is not None:
             person_id = get_person_id(image_path)
-            features_dict[image_path] = {
-                'person_id': person_id,
-                'features': features
-            }
+            if person_id is not None:
+                features_dict[image_path] = {
+                    'person_id': person_id,
+                    'features': features
+                }
     
     with open(output_file, 'w') as f:
         json.dump(features_dict, f, indent=4)

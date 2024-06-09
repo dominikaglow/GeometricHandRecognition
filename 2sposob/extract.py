@@ -4,6 +4,7 @@ import json
 import cv2
 import numpy as np
 from skimage.feature import hog
+import re
 
 def preprocess_image(image_path):
     image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
@@ -26,7 +27,13 @@ def get_all_image_paths(directory):
     return image_paths
 
 def get_person_id(image_path):
-    return os.path.basename(os.path.dirname(os.path.dirname(os.path.dirname(image_path))))
+    # Regex pattern to match 'p{number}'
+    pattern = r'p\d+'
+
+    # Find all occurrences of the pattern in the string
+    match = re.search(pattern, image_path)
+
+    return match.group() if match else None
 
 def save_features_to_json(image_paths, output_file):
     features_dict = {}

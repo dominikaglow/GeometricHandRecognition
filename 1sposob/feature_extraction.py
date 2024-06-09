@@ -1,9 +1,10 @@
+import os
+import sys
+import json
 import cv2
 import numpy as np
-import sys
 
 def kirsch_kernels():
-    # Define all 8 Kirsch kernels for edge detection
     return [
         np.array([[5, 5, 5], [-3, 0, -3], [-3, -3, -3]]),  # N
         np.array([[5, 5, -3], [5, 0, -3], [-3, -3, -3]]),  # NE
@@ -18,7 +19,6 @@ def kirsch_kernels():
 def calculate_texture_feature(image):
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     texture_code_map = np.zeros_like(gray, dtype=int)
-    # Assume the center point and its eight neighbors
     for i in range(1, gray.shape[0] - 1):
         for j in range(1, gray.shape[1] - 1):
             center = gray[i, j]
@@ -58,7 +58,6 @@ def calculate_direction_feature(image):
     return direction_code_map
 
 def calculate_histograms(feature_map, block_size=16):
-    # Split feature map into blocks and calculate histograms
     histograms = []
     for i in range(0, feature_map.shape[0], block_size):
         for j in range(0, feature_map.shape[1], block_size):
@@ -67,43 +66,48 @@ def calculate_histograms(feature_map, block_size=16):
             histograms.append(hist)
     return np.concatenate(histograms)
 
-def chi_square_distance(hist1, hist2):
-    return np.sum((hist1 - hist2)**2 / (hist1 + hist2 + 1e-10))
+def get_person_id(image_path):
+    return os.path.basename(os.path.dirname(os.path.dirname(os.path.dirname(image_path))))
 
-def match_palmprints(hist1, hist2, weights):
-    scores = [chi_square_distance(h1, h2) for h1, h2 in zip(hist1, hist2)]
-    return np.dot(weights, scores)
+def get_all_image_paths(directory):
+    image_paths = []
+    for root, _, files in os.walk(directory):
+        for file in files:
+            if file.endswith('.jpg'):
+                image_paths.append(os.path.join(root, file))
+    return image_paths
 
-def main():
+def save_features_to_json(image_paths, output_file):
+    features_dict = {}
+    for image_path in image_paths:
+        image = cv2.imread(image_path)
+        image = cv2.resize(image, (128, 128))
+        texture = calculate_texture_feature(image)
+        gradient = calculate_gradient_feature(image)
+        direction = calculate_direction_feature(image)
+        hist_texture = calculate_histograms(texture)
+        hist_gradient = calculate_histograms(gradient)
+        hist_direction = calculate_histograms(direction)
+        person_id = get_person_id(image_path)
+        features_dict[image_path] = {
+            'person_id': person_id,
+            'hist_texture': hist_texture.tolist(),
+            'hist_gradient': hist_gradient.tolist(),
+            'hist_direction': hist_direction.tolist()
+        }
     
-    if len(sys.argv) < 3:
-        print("Usage: python test.py <image1> <image2>")
-        return
-    
-    # Load and preprocess palmprint images
-    image1 = cv2.imread(sys.argv[1])
-    image2 = cv2.imread(sys.argv[2])
-
-    # Resize images to 128x128 pixels
-    image1 = cv2.resize(image1, (128, 128))
-    image2 = cv2.resize(image2, (128, 128))
-
-    # Calculate feature maps
-    texture1, gradient1, direction1 = calculate_texture_feature(image1), calculate_gradient_feature(image1), calculate_direction_feature(image1)
-    texture2, gradient2, direction2 = calculate_texture_feature(image2), calculate_gradient_feature(image2), calculate_direction_feature(image2)
-
-    # Calculate histograms for each type of feature
-    hist_texture1 = calculate_histograms(texture1)
-    hist_gradient1 = calculate_histograms(gradient1)
-    hist_direction1 = calculate_histograms(direction1)
-    hist_texture2 = calculate_histograms(texture2)
-    hist_gradient2 = calculate_histograms(gradient2)
-    hist_direction2 = calculate_histograms(direction2)
-
-    # Matching and fusion of histograms
-    weights = [0.1, 0.1, 0.8]  # Example weights
-    score = match_palmprints([hist_texture1, hist_gradient1, hist_direction1], [hist_texture2, hist_gradient2, hist_direction2], weights)
-    print("Matching score:", score)
+    with open(output_file, 'w') as f:
+        json.dump(features_dict, f, indent=4)
 
 if __name__ == "__main__":
-    main()
+    if len(sys.argv) != 3:
+        print("Usage: python extract_features_to_json.py <directory> <output_file>")
+        sys.exit(1)
+
+    directory = sys.argv[1]
+    output_file = sys.argv[2]
+
+    image_paths = get_all_image_paths(directory)
+    save_features_to_json(image_paths, output_file)
+
+    print(f"Features saved to {output_file}")
