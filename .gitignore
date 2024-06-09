@@ -2,6 +2,4 @@ REST_database/
 .DS_Store
 config.py
 rest-database
-1sposob/output.json
-2sposob/output.json
-3sposob/output.json
+*.json
