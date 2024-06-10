@@ -1,3 +1,5 @@
 REST_database/
 .DS_Store
 config.py
+rest-database
+*.json
