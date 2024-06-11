@@ -27,7 +27,7 @@ def check_classification(features_dict):
         for image_path2, data2 in features_dict.items():
             if image_path1 != image_path2:
                 hist2 = [np.array(data2['hist_texture']), np.array(data2['hist_gradient']), np.array(data2['hist_direction'])]
-                score = match_palmprints(hist1, hist2, [0.1, 0.1, 0.8])
+                score = match_palmprints(hist1, hist2, [0.3, 0.65, 0.05])
                 scores.append((image_path2, score))
         
         scores.sort(key=lambda x: x[1])  # Sort scores in ascending order
