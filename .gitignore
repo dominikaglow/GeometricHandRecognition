@@ -3,3 +3,5 @@ REST_database/
 config.py
 rest-database
 *.json
+2sposob/output.json
+3sposob/output.json

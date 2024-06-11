@@ -3,6 +3,7 @@ import sys
 import json
 import cv2
 import numpy as np
+import re
 
 def kirsch_kernels():
     return [
@@ -67,7 +68,13 @@ def calculate_histograms(feature_map, block_size=16):
     return np.concatenate(histograms)
 
 def get_person_id(image_path):
-    return os.path.basename(os.path.dirname(os.path.dirname(os.path.dirname(image_path))))
+    # Regex pattern to match 'p{number}'
+    pattern = r'p\d+'
+
+    # Find all occurrences of the pattern in the string
+    match = re.search(pattern, image_path)
+
+    return match.group() if match else None
 
 def get_all_image_paths(directory):
     image_paths = []

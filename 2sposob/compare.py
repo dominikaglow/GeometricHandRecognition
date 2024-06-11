@@ -13,9 +13,6 @@ def compare_features(features1, features2):
     distance = euclidean(features1, features2)
     return distance
 
-def get_person_id(image_path):
-    return os.path.basename(os.path.dirname(os.path.dirname(os.path.dirname(image_path))))
-
 def check_classification(features_dict):
     correct_count = 0
     total_count = len(features_dict)
